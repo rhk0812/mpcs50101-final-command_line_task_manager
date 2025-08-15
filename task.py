@@ -54,6 +54,7 @@ class Tasks:
     #add, list, report, done, delete,etc
 
 def main():
+    #parsing the arguments passed by the user
     parser = argparse.ArgumentParser(description = "Update your ToDo List")
     parser.add_argument('--add', type=str, required = False, help = 'a taks string to add your list')
     parser.add_argument('--priority', type=int, required =False, default =1, help = "priority of task; default value is 1")
@@ -67,7 +68,8 @@ def main():
     #Create instance of Tasks
     task_list = Tasks()
 
-    #Read out arguments (note the types)
+    #Read out arguments (note the types) + manipulate tasks
+    
     if args.add:
         print(f"We need to add {args.add} to our todo list with a priority of {args.priority}")
         task_list.add(args.add, args.priority)
@@ -75,7 +77,7 @@ def main():
     elif args.report:
         print('Print out the report')
 
-    #Create instance of Tasks
+
 
 
     for t in task_list.tasks():
