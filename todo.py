@@ -69,9 +69,13 @@ class Tasks:
             print(i.name)
             print(i.completed)
 
-    def done(self):
-        #marking it as complete
-        pass
+    def done(self,id_string):
+        #marking it as complete with the unique identifier
+        for i in self.tasks:
+            #unique_id is in uuid.UUID type, so convert it to string and compare to id entered by user and remove when matched
+            if str(i.unique_id) == id_string:
+                i.completed = True
+                print(f"Completed task {id_string}")
 
     def query(self):
         pass
@@ -81,10 +85,13 @@ class Tasks:
         self.tasks.append(item)
         print(self.tasks)
 
-    def delete(self):
+    def delete(self,id_string):
         #delte the task with the unique identifier
-        pass
-    
+        for i in self.tasks:
+            #unique_id is in uuid.UUID type, so convert it to string and compare to id entered by user and remove when matched
+            if str(i.unique_id) == id_string:
+                self.tasks.remove(i)
+                print(f"Deleted task {id_string}")
 
 def main():
     #parsing the arguments passed by the user
@@ -98,12 +105,14 @@ def main():
         --report
     """
     parser = argparse.ArgumentParser(description = "Update your ToDo List")
-    parser.add_argument('--add', type=str, required = False, help = 'a taks string to add your list')
+    parser.add_argument('--add', type=str, required = False, help = 'content of the task, etner string to add your list')
     parser.add_argument('--priority', type=int, required =False, default =1, help = "priority of task; default value is 1")
     parser.add_argument('--due', type = str, required=False, help="due date in dd/MM/YYY format")
     parser.add_argument('--query', type=str, required=False, nargs ="+", help="task details")
     parser.add_argument('--list', action = 'store_true', required = False, help="list all the tasks that have not been completed.")
     parser.add_argument('--report', action = 'store_true', required = False, help="list all the tasks both completed and incompleted.")
+    parser.add_argument('--delete', type=str, required = False, help = 'enter id of the task you want to delete')
+    parser.add_argument('--done', type=str, required = False, help = 'enter id of the task you want to mark it done')
     
     #parse the argument
     args = parser.parse_args()
@@ -131,12 +140,23 @@ def main():
         task_list.pickle_tasks()
 
     elif args.report:
-        #print('Print out the report')
+        #print out all the tasks regardless of it being closed or not
         task_list.report()
     
     elif args.list:
+        #print out the non-closed tasks
         task_list.list()
+    
+    elif args.delete:
+        #user pass unique id of the task, and delete it from the existing list
+        task_list.delete(args.delete)
+        task_list.pickle_tasks()
 
+    elif args.done:
+        #user pass unique id and mark task as completed
+        task_list.done(args.done)
+        task_list.pickle_tasks()
+        
 
 #    for t in task_list.tasks():
  #       print("These are all the tasks in my Tasks() object")
