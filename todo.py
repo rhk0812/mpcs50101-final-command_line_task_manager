@@ -8,6 +8,7 @@ import argparse
 import pickle
 import datetime
 import uuid
+import tabulate
 
 class Task:
     """Representation of a task
@@ -61,13 +62,16 @@ class Tasks:
                 print(i.name)
 
     def report(self):
-        #display all the tasks
+        """display all the tasks in below format:
+        ID   Age  Due Date   Priority   Task      Created                       Completed
+        --   ---  --------   --------   ----    ---------------------------   -------------------------
+        """
+        #add data into a nested list form
+        data=[]
         for i in self.tasks:
-            print(i.unique_id)
-            print(i.due_date)
-            print(i.priority)
-            print(i.name)
-            print(i.completed)
+            data.append(i.unique_id,i.due_date,i.date, i.priority, i.name, i.created, i.completed)
+
+        print(tabulate.tabulate(data, headers=["ID", "Age", "Due Date", "Priority", "Task", "Created", "Completed"], tablefmt="simple"))
 
     def done(self,id_string):
         #marking it as complete with the unique identifier
