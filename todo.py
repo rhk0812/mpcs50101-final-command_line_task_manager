@@ -1,6 +1,13 @@
+"""
+Reference:
+https://www.w3schools.com/python/python_datetime.asp
+https://www.geeksforgeeks.org/python/generating-random-ids-using-uuid-python/
+
+"""
 import argparse
 import pickle
 import datetime
+import uuid
 
 class Task:
     """Representation of a task
@@ -12,12 +19,18 @@ class Task:
               - completed - date (time-stamp)
               - due date - date, this is optional
     """
+    #list of unique ids, and check with using a set
+    unique_ids=set()
+
     #initializing task object
     def __init__(self,name,priority):
      self.name = name
      self.priority = priority
-     self.unique_id = 0
-     self.created = datetime.datetime.now().strftime("%a %b %d %X %Z %Y")
+     self.unique_id = uuid.uuid1()
+     while self.unique_id in Task.unique_ids:
+         self.unique_id = uuid.uuid1()
+     self.current_time = datetime.datetime.now()
+     self.created = self.current_time.strftime("%a %b %d %X %Z %Y")
      self.completed = False
      self.due_date = None
     
@@ -39,15 +52,22 @@ class Tasks:
         """Picle your task list to a file"""
         #last thing that happens before program closes
         with open('.todo.pickle', 'wb') as f:
-            pickle.dump(self.task, f)
+            pickle.dump(self.tasks, f)
 
-  
     def list(self):
-        pass
+        #display a list of not completed tasks sorted by due date. If same date, sort by decreasing priority
+        for i in self.tasks:
+            if i.completed == False:
+                print(i.name)
 
     def report(self):
-        #display a list of not completed tasks sorted by due date. If same date, sort by decreasing priority
-        pass
+        #display all the tasks
+        for i in self.tasks:
+            print(i.unique_id)
+            print(i.due_date)
+            print(i.priority)
+            print(i.name)
+            print(i.completed)
 
     def done(self):
         #marking it as complete
@@ -56,10 +76,11 @@ class Tasks:
     def query(self):
         pass
 
-    def add(self):
+    def add(self,item):
         #add a new task
-        pass
-    
+        self.tasks.append(item)
+        print(self.tasks)
+
     def delete(self):
         #delte the task with the unique identifier
         pass
@@ -99,16 +120,22 @@ def main():
         if args.due:
             try:
                 #return datetime corresponding to date_string, parsed according to format MM/dd/YYY
-                valid_date = datetime.strptime(args.due, "%m/%d/%Y")
-                current_task.due_date = valid_date
+                datetime.datetime.strptime(args.due, "%m/%d/%Y").date()
+                current_task.due_date = args.due
 
             except ValueError:
                 print("Please enter a date with format MM/dd/YYYY.")
             
-        #print(current_task.name, current_task.priority, current_task.created, current_task.due_date)
+        #print(current_task.name, current_task.priority, current_task.created, current_task.unique_id, current_task.due_date)
+        task_list.add(current_task)
+        task_list.pickle_tasks()
 
     elif args.report:
-        print('Print out the report')
+        #print('Print out the report')
+        task_list.report()
+    
+    elif args.list:
+        task_list.list()
 
 
 #    for t in task_list.tasks():
