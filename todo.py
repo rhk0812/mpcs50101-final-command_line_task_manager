@@ -2,13 +2,16 @@
 Reference:
 https://www.w3schools.com/python/python_datetime.asp
 https://www.geeksforgeeks.org/python/generating-random-ids-using-uuid-python/
-
+https://www.geeksforgeeks.org/python/how-to-add-and-subtract-days-using-datetime-in-python/
+https://www.geeksforgeeks.org/python/python-program-to-find-number-of-days-between-two-given-dates/
+https://www.geeksforgeeks.org/python/sort-a-list-of-objects-by-multiple-attributes-in-python/
 """
 import argparse
 import pickle
 import datetime
 import uuid
 import tabulate
+from tzlocal import get_localzone
 
 class Task:
     """Representation of a task
@@ -30,8 +33,11 @@ class Task:
      self.unique_id = uuid.uuid1()
      while self.unique_id in Task.unique_ids:
          self.unique_id = uuid.uuid1()
-     self.current_time = datetime.datetime.now()
-     self.created = self.current_time.strftime("%a %b %d %X %Z %Y")
+     #grab timezone info of the user
+     self.local_timezone = get_localzone()
+     self.created_time = datetime.datetime.now()
+     self.created_new = self.created_time.replace(tzinfo=self.local_timezone)
+     self.created = self.created_new.strftime("%a %b %d %X %Z %Y")
      self.completed = False
      self.due_date = None
     
@@ -48,18 +54,46 @@ class Tasks:
         except:
             #if there is no existing pickle file, we initialize the list
             self.tasks = []
+    
+    def sort_list(self):
+        """
+        this function sorts the list according to due_date, and then priority using a tuple
+        if due_date does not exists, return a max date to have them at the bottom of the list
+        """
+        self.tasks.sort(key=lambda x: (x.due_date if x.due_date is not None else "13/31/9999", x.priority))
 
     def pickle_tasks(self):
-        """Picle your task list to a file"""
+        """Picle your task list to a file
+           This will be run everytime before program closes
+        """
+        #sort the list before saving it
+        self.sort_list()
         #last thing that happens before program closes
         with open('.todo.pickle', 'wb') as f:
             pickle.dump(self.tasks, f)
 
     def list(self):
+        """
+        ID   Age  Due Date   Priority   Task
+        --   ---  --------   --------   ----
+        3    1d   -           2         Buy eggs
+        4    30d  -           1         Make eggs
+        """
+        
         #display a list of not completed tasks sorted by due date. If same date, sort by decreasing priority
+        data=[]
+        current_time=datetime.datetime.now()
+        self.sort_list()
+
         for i in self.tasks:
             if i.completed == False:
-                print(i.name)
+                 #calculate the age of task by calculating the difference between current time and instance's created data
+                dif = current_time-i.created_time
+                days_passed = f"{dif.days}d"
+                data.append([i.unique_id,days_passed,i.due_date, i.priority, i.name])
+             
+        #print the data in simple table with headers
+        print(tabulate.tabulate(data, headers=["ID", "Age", "Due Date", "Priority", "Task"], tablefmt="simple"))
 
     def report(self):
         """display all the tasks in below format:
@@ -68,9 +102,13 @@ class Tasks:
         """
         #add data into a nested list form
         data=[]
+        current_time=datetime.datetime.now()
         for i in self.tasks:
-            data.append(i.unique_id,i.due_date,i.date, i.priority, i.name, i.created, i.completed)
-
+            #calculate the age of task by calculating the difference between current time and instance's created data
+            dif = current_time-i.created_time
+            days_passed = f"{dif.days}d"
+            data.append([i.unique_id,days_passed,i.due_date, i.priority, i.name, i.created, i.completed])
+        #print the data in simple table with headers
         print(tabulate.tabulate(data, headers=["ID", "Age", "Due Date", "Priority", "Task", "Created", "Completed"], tablefmt="simple"))
 
     def done(self,id_string):
@@ -81,13 +119,27 @@ class Tasks:
                 i.completed = True
                 print(f"Completed task {id_string}")
 
-    def query(self):
-        pass
+    def query(self, query_string):
+        data=[]
+        current_time=datetime.datetime.now()
+        #loop through each item 
+        for i in self.tasks:
+            #loop through keywords to find a match
+            for item in query_string:
+                if item.lower() in i.name.lower():
+                    #print(i.name) 
+                    dif = current_time-i.created_time
+                    days_passed = f"{dif.days}d"
+                    data.append([i.unique_id,days_passed,i.due_date, i.priority, i.name])
+             
+        #print the data in simple table with headers
+        print(tabulate.tabulate(data, headers=["ID", "Age", "Due Date", "Priority", "Task"], tablefmt="simple"))
+
 
     def add(self,item):
         #add a new task
         self.tasks.append(item)
-        print(self.tasks)
+        #print(self.tasks)
 
     def delete(self,id_string):
         #delte the task with the unique identifier
@@ -132,9 +184,11 @@ def main():
         current_task=Task(args.add,args.priority)
         if args.due:
             try:
-                #return datetime corresponding to date_string, parsed according to format MM/dd/YYY
-                datetime.datetime.strptime(args.due, "%m/%d/%Y").date()
-                current_task.due_date = args.due
+                #convert string to datetime format to check if it's in the right format
+                new_date = datetime.datetime.strptime(args.due, "%m/%d/%Y").date()
+                #convert back to string to save it in instance
+                date_input = new_date.strftime("%m/%d/%Y")
+                current_task.due_date = date_input
 
             except ValueError:
                 print("Please enter a date with format MM/dd/YYYY.")
@@ -160,7 +214,9 @@ def main():
         #user pass unique id and mark task as completed
         task_list.done(args.done)
         task_list.pickle_tasks()
-        
+    
+    elif args.query:
+        task_list.query(args.query)
 
 #    for t in task_list.tasks():
  #       print("These are all the tasks in my Tasks() object")
